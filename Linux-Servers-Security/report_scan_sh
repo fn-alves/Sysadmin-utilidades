@@ -1,0 +1,171 @@
+#!/bin/bash
+##############################################################################################
+# Atividade: Rotina de diaria para verificar as portas ativas no servidor
+# Proposito: Ter em maos o relatorio de seguranca em PDF de cada servidor individual 
+# Data: 04/12/2013
+# Autor: Elvis Suffi Pompeu
+# Analista de Suporte Linux
+###############################################################################################
+
+REL="relatorio-seg-${HOSTNAME}-$(date +"%d-%m-%Y").html"
+SENDEMAIL="/usr/local/bin/sendEmail.sh"
+EMAILTO="email@suaempresa.com.br"
+
+# Cabecalho inicial do relatorio
+echo -e "<HTML><HEAD><TITLE>Relatorio Diario de Seguranca- Servidores Linux</TITLE></HEAD><BODY>" > ${REL} 
+echo -e "<hr color=navy>" >> ${REL}
+echo -e "<p align="center"><font face="arial" size="7"><b>RELATORIO DIARIO DE SEGURANCA LINUX<b></font></p>" >> ${REL}
+echo -e "<p align="center"><font face="arial" size="1"><b>Desenvolvido por Elvis Suffi Pompeu<b></font></p>" >> ${REL}
+echo -e "<hr color=navy>" >> ${REL}
+echo -e "<CENTER>" >> ${REL}
+# Troque pelo logo da sua empresa
+echo -e "<img src="http://monitoria.saveti.com.br/wiki/images/04ul.png.1.jpg">" >> ${REL}
+echo -e "</CENTER>" >> ${REL}
+echo -e "<hr color=navy>" >> ${REL}
+echo -e "<font face="arial" size="2">" >> ${REL}
+# Pula linha em HTML
+echo -e "<br>" >> ${REL}
+# Hostname e versao do SO / Distribuicao
+echo -e "<TABLE BORDER=1>" >> ${REL}
+echo -e "<TR>" >> ${REL}
+echo -e "<TD>" >> ${REL}
+echo -e "<b>INFORMACOES DO SISTEMA: </b>" >> ${REL}
+echo -e "</TD>" >> ${REL}
+echo -e "</TR>" >> ${REL}
+echo -e "</TABLE>" >> ${REL}
+echo -e "<br>" >> ${REL}
+echo -e "<b>Nome do Servidor: </b> ${HOSTNAME}" >> ${REL}
+echo -e "<br>" >> ${REL}
+echo -e "<b>SO:</b> $(echo $OSTYPE) / $(uname)" >> ${REL}
+# Qual distribuicao do sistema
+
+DEBIAN=$(cat /etc/issue | grep -i debian | wc -l)
+CENTOS=$(cat /etc/issue | grep -i centos | wc -l)
+REDHAT=$(cat /etc/issue | grep -i "red hat" | wc -l)
+UBUNTU=$(cat /etc/issue | grep -i ubuntu | wc -l)
+SUSE=$(cat /etc/issue | grep -i suse | wc -l)
+OPENSUSE=$(cat /etc/issue | grep -i opensuse | wc -l || cat /etc/issue | grep -i "open suse" | wc -l)
+FEDORA=$(cat /etc/issue | grep -i fedora | wc -l)
+
+echo -e "<br>" >> ${REL}
+
+	if [ ${DEBIAN} -ne 0 ]; then
+
+		echo -e "<b>Distribuicao:</b> Debian" >> ${REL}
+
+	elif [ ${CENTOS} -ne 0 ]; then
+
+		echo -e "<b>Distribuicao:</b> CentOS" >> ${REL}
+
+	elif [ ${REDHAT} -ne 0 ]; then
+	
+		echo -e "<b>Distribuicao:</b> Red Hat" >> ${REL}
+
+	elif [ ${UBUNTU} -ne 0 ]; then
+	
+		echo -e "<b>Distribuicao:</b> Ubuntu" >> ${REL}
+
+	elif [ ${SUSE} -ne 0 ]; then
+
+		echo -e "<b>Distribuicao:</b> Suse" >> ${REL}
+
+	elif [ ${OPENSUSE} -ne 0 ]; then
+
+		echo -e "<b>Distribuicao:</b> Open Suse" >> ${REL}
+
+	elif [ ${FEDORA} -ne 0 ]; then
+
+		echo -e "<b>Distribuicao:</b> Fedora" >> ${REL}
+
+	fi
+
+echo -e "<br>" >> ${REL}
+echo -e "<b>Data:</b> $(date +"%d/%m/%Y")" >> ${REL}
+echo -e "<br>" >> ${REL}
+echo -e "<b>Hora: </b> $(date +"%H:%M")" >> ${REL} 
+
+echo -e "<br><br>" >> ${REL}
+
+echo -e "<hr color=navy>" >> ${REL}
+echo -e "<br>" >> ${REL}
+echo -e "<TABLE BORDER=1>" >> ${REL}
+echo -e "<TR>" >> ${REL}
+echo -e "<TD>" >> ${REL}
+echo -e "<b>Portas ativas no Servidor (NMAP):</b>" >> ${REL}
+echo -e "</TD>" >> ${REL}
+echo -e "</TR>" >> ${REL}
+echo -e "</TABLE>" >> ${REL}
+
+echo -e "<TABLE BORDER=1>" >> ${REL}
+echo -e "<TR>" >> ${REL} 
+echo -e "<TD>" >> ${REL}
+sleep 2
+NMAP=$(nmap -p 1-65535 localhost |wc -l)
+for (( i=2; i<=${NMAP}; i++ ));
+do
+	echo -e "$(nmap -p 1-65535 localhost | grep -n ^ | grep ^${i}:)" >> ${REL}
+	echo -e "<br>" >> ${REL}
+done
+echo -e "</TD>" >> ${REL}
+echo -e "</TR>" >> ${REL}
+echo -e "</TABLE>" >> ${REL}
+
+echo -e "<br><br>" >> ${REL}
+
+echo -e "<hr color=navy>" >> ${REL}
+echo -e "<br>" >> ${REL}
+echo -e "<TABLE BORDER=1>" >> ${REL}
+echo -e "<TR>" >> ${REL}
+echo -e "<TD>" >> ${REL}
+echo -e "<b>Portas e Servicos ativos no sistema:</b>" >> ${REL}
+echo -e "</TD>" >> ${REL}
+echo -e "</TR>" >> ${REL}
+echo -e "</TABLE>" >> ${REL}
+
+LSOF=$(lsof -i tcp -P |wc -l)
+for (( i=2; i<=${LSOF}; i++ ));
+do
+        echo -e "$(lsof -i tcp -P | grep -n ^ | grep ^${i}:)" >> ${REL}
+        echo -e "<br>" >> ${REL}
+done
+echo -e "</TD>" >> ${REL}
+echo -e "</TR>" >> ${REL}
+echo -e "</TABLE>" >> ${REL}
+# Rodape
+
+echo -e "<br>" >> ${REL} 
+echo -e "<hr color=navy>" >> ${REL}
+echo -e "<br>" >> ${REL}
+echo -e "<CENTER>" >> ${REL}
+echo -e "Monitoria de Servidores | Tecnologia da Informacao" >>${REL}
+echo -e "<br>" >> ${REL}
+# Troque pelo logo da sua emrpesa
+echo -e "<img src="http://monitoria.saveti.com.br/wiki/images/04ul.png.2">" >> ${REL}
+echo -e "</CENTER>" >> ${REL}
+echo -e "</font>" >> ${REL}
+
+# Fim
+echo -e "</BODY></HTML>" >> ${REL}
+
+sleep 2
+
+htmldoc --webpage --color -t pdf14 --size a4 ${REL} -f relatorio-seg-${HOSTNAME}-$(date +"%d-%m-%Y").pdf
+
+REL="relatorio-seg-${HOSTNAME}-$(date +"%d-%m-%Y").pdf"
+
+tar -zcvf ${REL}.tar.gz ${REL}
+
+sleep 2
+
+	if [ -e ${REL} ]; then
+          		
+		${SENDEMAIL} ${EMAILTO} "Sysadmin: Relatorio diario de Seguranca do servidor $(hostname)" "Rotina diaria: ok\nAutor: Elvis Suffi Pompeu\n\nAtenciosamente,\nMonitoria de Servidores | Tecnologia da Informacao" ${REL}.tar.gz
+	
+		while [[ ${?} -ne 0 ]] ; do
+			${SENDEMAIL} ${EMAILTO} "Sysadmin: Relatorio diario de seguranca do servidor $(hostname)" "Rotina diaria: ok\nAutor: Elvis Suffi Pompeu\n\nAtenciosamente,\nMonitoria de Servidores | Tecnologia da Informacao" ${REL}.tar.gz
+		done
+
+		sleep 10
+		REL="relatorio-${HOSTNAME}-$(date +"%d-%m-%Y")."
+        	rm -rf ${REL}*
+       	fi
